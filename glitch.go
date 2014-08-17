@@ -12,47 +12,17 @@ import (
   "os"
 )
 
-func main() {
-	var seed = flag.Int("seed", 42, "seed")
-	var interval = flag.Int("interval", 10, "interval")
-	flag.Parse()
-
-	rand.Seed(int64(*seed))
-
-	outFilename := "blank.png"
-	inFilename := "test.jpg"
-	//width, height := 500, 500
-
-	log.Print("reading file: ", inFilename)
-	file, err := os.Open(inFilename)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	img, err := jpeg.Decode(file)
-
-	if err != nil {
-		log.Fatal(err)
-	}
-	file.Close()
-
-	m := resize.Resize(500, 500, img, resize.Lanczos3)
-
-	//canvas := Newcanvas(image.Rect(0,0, 500, 500))
-        i := image.NewRGBA(image.Rect(0, 0, 500, 500))
-        gc := draw2d.NewGraphicContext(i)
-        gc.Save()
-
-	float_interval := float64(*interval)
+func renderPng(gc *draw2d.ImageGraphicContext, m image.Image, interval int) {
+	float_interval := float64(interval)
+  gc.Save()
 
 	// move to a partition
-	for i := 0; i < 500; i += *interval {
-		for j := 0; j < 500 ; j += *interval {
-
+	for i := 0; i < 500; i += interval {
+		for j := 0; j < 500 ; j += interval {
 			x := i
 			y := j
 
-			c := m.At(x + rand.Intn(*interval), y + rand.Intn(*interval))
+			c := m.At(x + rand.Intn(interval), y + rand.Intn(interval))
 			gc.Save()
 
 
@@ -65,21 +35,45 @@ func main() {
 			gc.RLineTo(-1 * float_interval, 0)
 
 			gc.SetLineWidth(float_interval)
-		        gc.SetStrokeColor(c)
-			//gc.SetFillColor(c)
+		  gc.SetStrokeColor(c)
 
-			//gc.Fill()
-			//gc.FillStroke()
 			gc.Stroke()
-			//gc.ClosePath()
 
-			//r := image.Rect(x, y, x + interval, y + interval)
 			gc.Restore()
 		}
 	}
 
 
-	out, err := os.Create(outFilename)
+}
+
+func renderPngToFile(inFile string, outFile string, seed int, interval int) {
+
+	// make a new image
+  out_img := image.NewRGBA(image.Rect(0, 0, 500, 500))
+  gc := draw2d.NewGraphicContext(out_img)
+
+	log.Print("reading file: ", inFile)
+
+	file, err := os.Open(inFile)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	log.Print("decoding jpg...")
+	img, err := jpeg.Decode(file)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+	file.Close()
+	log.Print("ok")
+
+	log.Print("resizing jpg")
+	m := resize.Resize(500, 500, img, resize.Lanczos3)
+
+	renderPng(gc, m, interval)
+
+	out, err := os.Create(outFile)
 
 	if err != nil {
 		log.Fatal(err)
@@ -87,8 +81,23 @@ func main() {
 
 	defer out.Close()
 
-	log.Print("Saving  image to ", outFilename)
-	png.Encode(out, i)
+	log.Print("Saving  image to ", outFile)
+	png.Encode(out, out_img)
 
+
+}
+
+
+func main() {
+	var seed = flag.Int("seed", 42, "seed")
+	var interval = flag.Int("interval", 10, "interval")
+	flag.Parse()
+
+	rand.Seed(int64(*seed))
+
+	outFilename := "blank.png"
+	inFilename := "test.jpg"
+
+	renderPngToFile(inFilename, outFilename, *seed, *interval)
 }
 // import
