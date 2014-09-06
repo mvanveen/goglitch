@@ -10,7 +10,6 @@ import (
   "log"
   "math/rand"
   "os"
-	"strconv"
 )
 
 func renderPng(gc *draw2d.ImageGraphicContext, m image.Image, interval int) {
@@ -43,12 +42,34 @@ func renderPng(gc *draw2d.ImageGraphicContext, m image.Image, interval int) {
 			gc.Restore()
 		}
 	}
+
+
 }
 
-func renderPngToFile(m image.Image, outFile string, seed int, interval int, ch chan<-bool) {
+func renderPngToFile(inFile string, outFile string, seed int, interval int) {
+
 	// make a new image
   out_img := image.NewRGBA(image.Rect(0, 0, 500, 500))
   gc := draw2d.NewGraphicContext(out_img)
+
+	log.Print("reading file: ", inFile)
+
+	file, err := os.Open(inFile)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	log.Print("decoding jpg...")
+	img, err := jpeg.Decode(file)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+	file.Close()
+	log.Print("ok")
+
+	log.Print("resizing jpg")
+	m := resize.Resize(500, 500, img, resize.Lanczos3)
 
 	renderPng(gc, m, interval)
 
@@ -63,55 +84,20 @@ func renderPngToFile(m image.Image, outFile string, seed int, interval int, ch c
 	log.Print("Saving  image to ", outFile)
 	png.Encode(out, out_img)
 
-	ch <- true
+
 }
 
 
 func main() {
-
-	outFilename := "out"
-	inFilename := "test.jpg"
-
 	var seed = flag.Int("seed", 42, "seed")
 	var interval = flag.Int("interval", 10, "interval")
 	flag.Parse()
 
-	log.Print("reading file: ", inFilename)
-
-	file, err := os.Open(inFilename)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	log.Print("decoding jpg...")
-	img, err := jpeg.Decode(file)
-
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	defer file.Close()
-
-	log.Print("ok")
-
-	log.Print("resizing jpg")
-	m := resize.Resize(500, 500, img, resize.Lanczos3)
-
 	rand.Seed(int64(*seed))
 
+	outFilename := "blank.png"
+	inFilename := "test.jpg"
 
-	ch := make(chan bool)
-	for iteration := 0 ; iteration < 10; iteration++ {
-		go renderPngToFile(
-			m,
-		  outFilename + strconv.Itoa(iteration) + ".png",
-		  *seed,
-			*interval,
-			ch)
-	}
-
-	for iteration := 0 ; iteration < 10; iteration++ {
-		<-ch   // Wait for sort to finish; discard sent value.
-	}
+	renderPngToFile(inFilename, outFilename, *seed, *interval)
 }
 // import
