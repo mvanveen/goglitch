@@ -1,9 +1,11 @@
-export INTERVAL=6
+export INTERVAL=1
+export COLORS=256
 
-rm -f *.png
-rm -f out*.gif
-for VAR in {1..10}
+./glitch
+for VAR in {0..9}
 do
-  echo $VAR;./glitch -seed=$RANDOM -interval=$INTERVAL; mv blank.png $VAR.png; convert $VAR.png out-$VAR.gif
+  #echo $VAR;./glitch -seed=$RANDOM -interval=$INTERVAL; mv blank.png $VAR.png; convert $VAR.png out-$VAR.gif
+  convert out$VAR.png out$VAR.gif
 done
-gifsicle --loop --colors 128 --delay 10 out*.gif > anim.gif 
+
+gifsicle --loop --colors $COLORS --delay 10 out*.gif > anim.gif 
