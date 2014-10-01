@@ -10,12 +10,12 @@ import (
   "log"
   "math/rand"
   "os"
-	"strconv"
+  "strconv"
 )
 
 func renderPng(gc *draw2d.ImageGraphicContext, m image.Image, interval int) {
 	float_interval := float64(interval)
-  gc.Save()
+	gc.Save()
 
 	// move to a partition
 	for i := 0; i < 500; i += interval {
